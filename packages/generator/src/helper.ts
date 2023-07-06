@@ -237,16 +237,45 @@ const getSplitPosition = (inputLine: string, isOverEval: IsOverEval) => {
   while (inputLine[overPosTmp] !== ' ' && overPosTmp >= 0) {
     overPosTmp--;
   }
+  // if(overPosTmp > 0) console.log("char at overPosTemp: %s", inputLine.charAt(overPosTmp));
+  // console.log('overPosTemp: %d, overPos: %d', overPosTmp, overPos);
 
   // For very long lines with no whitespace use the original overPos
   return overPosTmp > 0 ? overPosTmp : overPos - 1;
+};
+
+
+
+
+const getSplittedLinesGPT = (input: string, isOverEval: IsOverEval): string[] => {
+  const words = input.split(' ');
+  const outputStrings = [];
+  let currentLine = '';
+
+  for (const word of words) {
+    // If the word can fit in the current line
+    if (!isOverEval(currentLine + ' ' + word)) {
+      currentLine += ' ' + word;
+    } else {
+      // Push the current line to output and start a new line
+      outputStrings.push(currentLine.trim());
+      currentLine = word;
+    }
+  }
+
+  // Add the final line if it's not empty
+  if (currentLine) {
+    outputStrings.push(currentLine);
+  }
+
+  return outputStrings;
 };
 
 /**
  * Recursively splits the line at getSplitPosition.
  * If there is some leftover, split the rest again in the same manner.
  */
-const getSplittedLines = (inputLine: string, isOverEval: IsOverEval): string[] => {
+const getSplittedLinesOriginal = (inputLine: string, isOverEval: IsOverEval): string[] => {
   const splitPos = getSplitPosition(inputLine, isOverEval);
   const splittedLine = inputLine.substring(0, splitPos);
   const rest = inputLine.substring(splitPos).trimStart();
@@ -255,8 +284,9 @@ const getSplittedLines = (inputLine: string, isOverEval: IsOverEval): string[] =
     return [splittedLine];
   }
 
-  return [splittedLine, ...getSplittedLines(rest, isOverEval)];
+  return [splittedLine, ...getSplittedLinesOriginal(rest, isOverEval)];
 };
+
 
 interface FontSetting {
   font: Font;
@@ -294,7 +324,10 @@ const drawInputByTextSchema = async (arg: {
         pdfFontValue.widthOfTextAtSize(testString, size) + (testString.length - 1) * characterSpacing;
       return width <= testStringWidth;
     };
-    const splitedLines = getSplittedLines(inputLine, isOverEval);
+    const splitedLines = getSplittedLinesGPT(inputLine, isOverEval);
+
+    // console.log("Splitted Lines GPT:");
+    // console.log(splitedLines);
     const drawLine = (splitedLine: string, splitedLineIndex: number) => {
       const textWidth =
         pdfFontValue.widthOfTextAtSize(splitedLine, size) +
@@ -315,7 +348,7 @@ const drawInputByTextSchema = async (arg: {
       });
       if (splitedLines.length === splitedLineIndex + 1) beforeLineOver += splitedLineIndex;
     };
-
+    //drawLine("d", 0);
     splitedLines.forEach(drawLine);
   });
 };
