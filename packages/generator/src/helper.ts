@@ -245,9 +245,7 @@ const getSplitPosition = (inputLine: string, isOverEval: IsOverEval) => {
 };
 
 
-
-
-const getSplittedLinesGPT = (input: string, isOverEval: IsOverEval): string[] => {
+const getSplittedLines = (input: string, isOverEval: IsOverEval): string[] => {
   const words = input.split(' ');
   const outputStrings = [];
   let currentLine = '';
@@ -269,22 +267,6 @@ const getSplittedLinesGPT = (input: string, isOverEval: IsOverEval): string[] =>
   }
 
   return outputStrings;
-};
-
-/**
- * Recursively splits the line at getSplitPosition.
- * If there is some leftover, split the rest again in the same manner.
- */
-const getSplittedLinesOriginal = (inputLine: string, isOverEval: IsOverEval): string[] => {
-  const splitPos = getSplitPosition(inputLine, isOverEval);
-  const splittedLine = inputLine.substring(0, splitPos);
-  const rest = inputLine.substring(splitPos).trimStart();
-
-  if (rest.length === 0) { // end recursion if there is no rest
-    return [splittedLine];
-  }
-
-  return [splittedLine, ...getSplittedLinesOriginal(rest, isOverEval)];
 };
 
 
@@ -324,10 +306,8 @@ const drawInputByTextSchema = async (arg: {
         pdfFontValue.widthOfTextAtSize(testString, size) + (testString.length - 1) * characterSpacing;
       return width <= testStringWidth;
     };
-    const splitedLines = getSplittedLinesGPT(inputLine, isOverEval);
+    const splitedLines = getSplittedLines(inputLine, isOverEval);
 
-    // console.log("Splitted Lines GPT:");
-    // console.log(splitedLines);
     const drawLine = (splitedLine: string, splitedLineIndex: number) => {
       const textWidth =
         pdfFontValue.widthOfTextAtSize(splitedLine, size) +
@@ -348,7 +328,6 @@ const drawInputByTextSchema = async (arg: {
       });
       if (splitedLines.length === splitedLineIndex + 1) beforeLineOver += splitedLineIndex;
     };
-    //drawLine("d", 0);
     splitedLines.forEach(drawLine);
   });
 };
